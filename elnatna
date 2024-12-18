@@ -1,13 +1,13 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
-def writeToJsonFile(comPort, sleepTime, address, testList,attack_path,test_path, filePath = "input_data.json") {
+def writeToJsonFile(comPort, sleepTime, address, attackPath, testPath, testList, filePath = "input_data.json") {
     def data = [
         COM        : comPort,
         SLEEP_TIME : sleepTime,
         address    : address,
-        attack_path: attack_path,
-        test_path  : test_path,
+        attack_path: attackPath,
+        test_path  : testPath,
         test_list  : testList
     ]
     def json = JsonOutput.prettyPrint(JsonOutput.toJson(data))
@@ -28,12 +28,14 @@ def runTestsFromJson(filePath = "input_data.json") {
     def comPort = inputData.COM
     def sleepTime = inputData.SLEEP_TIME
     def address = inputData.address
+    def attackPath = inputData.attack_path
+    def testPath = inputData.test_path
     def testList = inputData.test_list
 
-    echo "Running tests with: COM=${comPort}, Sleep Time=${sleepTime}, Address=${address}, Tests=${testList}"
+    echo "Running tests with: COM=${comPort}, Sleep Time=${sleepTime}, Address=${address}, Attack Path=${attackPath}, Test Path=${testPath}, Tests=${testList}"
 
     testList.each { test ->
-        def command = "python ${test} ${comPort} ${address}"
+        def command = "python ${testPath}/${test} ${comPort} ${address}"
         echo "Executing: ${command}"
 
         def process = ["cmd.exe", "/c", command].execute()
@@ -61,6 +63,8 @@ pipeline {
                         comPort: params.COM_PORT ?: "COM4",
                         sleepTime: params.SLEEP_TIME ?: 5,
                         address: params.BLUETOOTH_ADDRESS ?: "AA:BB:CC:DD:EE:FF",
+                        attackPath: params.ATTACK_PATH ?: "C:/attacks",
+                        testPath: params.TEST_PATH ?: "C:/tests",
                         testList: params.TEST_LIST ? params.TEST_LIST.tokenize(",") : ["test_script1.py", "test_script2.py"]
                     )
                 }
