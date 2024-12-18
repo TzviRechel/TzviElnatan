@@ -1,1 +1,36 @@
+def update_input_json(com_port, test_list, address) {
+    def split_url = sdk_url.split('/')
+    def sdk_name = split_url[split_url.length - 1].replace(".exe", "")
+    return sdk_name
+}
 
+def run_tests() {
+    bat "python "
+}
+
+pipeline {
+    agent {label "DTGM0JTBT6"}
+
+    stages {
+        stage("Stage 2 name") {
+            steps {
+                script {
+                    update_input_json(params.com_port, params.test_list, "AA:BB:CC:DD:EE:FF")
+                    run_tests()
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            emailext (
+                to: "email@ti.com",
+                recipientProviders: [requestor()],
+                subject: "Email Subject",
+                body: "Email body",
+                mimeType: "text/html" // Can be omitted if the body isn't in html format
+            )
+        }
+    }
+}
