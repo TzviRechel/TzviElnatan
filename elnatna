@@ -1,36 +1,76 @@
-def update_input_json(com_port, test_list, address) {
-    def split_url = sdk_url.split('/')
-    def sdk_name = split_url[split_url.length - 1].replace(".exe", "")
-    return sdk_name
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+def writeToJsonFile(comPort, sleepTime, address, testList, filePath = "input_data.json") {
+    def data = [
+        COM        : comPort,
+        SLEEP_TIME : sleepTime,
+        address    : address,
+        test_list  : testList
+    ]
+    def json = JsonOutput.prettyPrint(JsonOutput.toJson(data))
+    new File(filePath).write(json)
 }
 
-def run_tests() {
-    bat "python "
+def readFromJsonFile(filePath = "input_data.json") {
+    def jsonFile = new File(filePath)
+    if (!jsonFile.exists()) {
+        error "JSON file not found: ${filePath}"
+    }
+    return new JsonSlurper().parse(jsonFile)
+}
+
+def runTestsFromJson(filePath = "input_data.json") {
+    def inputData = readFromJsonFile(filePath)
+
+    def comPort = inputData.COM
+    def sleepTime = inputData.SLEEP_TIME
+    def address = inputData.address
+    def testList = inputData.test_list
+
+    echo "Running tests with: COM=${comPort}, Sleep Time=${sleepTime}, Address=${address}, Tests=${testList}"
+
+    testList.each { test ->
+        def command = "python ${test} ${comPort} ${address}"
+        echo "Executing: ${command}"
+
+        def process = ["bash", "-c", command].execute()
+        process.waitForOrKill(sleepTime * 1000)
+
+        def stdout = process.in.text
+        def stderr = process.err.text
+
+        if (stderr) {
+            echo "Error in test ${test}: ${stderr}"
+        } else {
+            echo "Output of ${test}:\n${stdout}"
+        }
+    }
 }
 
 pipeline {
-    agent {label "DTGM0JTBT6"}
+    agent any
 
     stages {
-        stage("Stage 2 name") {
+        stage("Prepare JSON") {
             steps {
                 script {
-                    update_input_json(params.com_port, params.test_list, "AA:BB:CC:DD:EE:FF")
-                    run_tests()
+                    writeToJsonFile(
+                        comPort: "COM4",
+                        sleepTime: 5,
+                        address: "AA:BB:CC:DD:EE:FF",
+                        testList: ["test_script1.py", "test_script2.py"]
+                    )
                 }
             }
         }
-    }
 
-    post {
-        always {
-            emailext (
-                to: "email@ti.com",
-                recipientProviders: [requestor()],
-                subject: "Email Subject",
-                body: "Email body",
-                mimeType: "text/html" // Can be omitted if the body isn't in html format
-            )
+        stage("Run Tests") {
+            steps {
+                script {
+                    runTestsFromJson()
+                }
+            }
         }
     }
 }
