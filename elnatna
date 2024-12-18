@@ -1,11 +1,13 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 
-def writeToJsonFile(comPort, sleepTime, address, testList, filePath = "input_data.json") {
+def writeToJsonFile(comPort, sleepTime, address, testList,attack_path,test_path, filePath = "input_data.json") {
     def data = [
         COM        : comPort,
         SLEEP_TIME : sleepTime,
         address    : address,
+        attack_path: attack_path,
+        test_path  : test_path,
         test_list  : testList
     ]
     def json = JsonOutput.prettyPrint(JsonOutput.toJson(data))
