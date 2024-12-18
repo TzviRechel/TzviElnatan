@@ -1,41 +1,48 @@
-import random
-import time
+import subprocess
+import pytest
+from threading import Timer
 import os
 
-def matrix_effect(columns=80, speed=0.05, density=0.1):
-    """
-    Create a simple Matrix-style falling text effect.
+# Default parameters
+TIME_FOR_TEST = 5  # Timeout for each script in seconds
+COM_PORT = "COM4"
+MAC_ADDRESS = "84:72:93:3c:5d:d6"
 
-    :param columns: Number of columns (width of the screen).
-    :param speed: Delay between each frame (lower is faster).
-    :param density: Probability of a column generating a new character.
+# Path to the directory containing attack scripts
+SCRIPTS_DIRECTORY = "../attack_scripts"
+
+# The failure phrase to look for in the output
+FAILURE_PHRASE = "The device may have crashed"
+
+# Dynamically list all Python files in the specified directory
+def get_attack_scripts(directory):
+    return [
+        os.path.join(directory, f) for f in os.listdir(directory)
+        if f.endswith(".py")
+    ]
+
+attack_scripts = get_attack_scripts(SCRIPTS_DIRECTORY)
+
+@pytest.mark.parametrize("script_name", attack_scripts)
+def test_attack_script(script_name):
     """
-    # Initialize a list to store positions of characters for each column
-    positions = [0] * columns
+    Run an attack script, capture its output, and validate it.
+    """
+    command = ["python", script_name, COM_PORT, MAC_ADDRESS]
+    print(f"Running script: {script_name}")
 
     try:
-        while True:
-            # Clear the screen
-            os.system('cls' if os.name == 'nt' else 'clear')
+        # Run the script with a timeout
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        timer = Timer(TIME_FOR_TEST, process.terminate)  # Terminate process after timeout
+        timer.start()
+        stdout, stderr = process.communicate()  # Capture stdout and stderr
+    finally:
+        timer.cancel()  # Cancel the timer if the process finishes
 
-            # Create the Matrix effect row by row
-            for i in range(columns):
-                # Randomly decide if the column should generate a character
-                if random.random() < density:
-                    positions[i] = random.randint(1, 25)  # Length of falling text
+    # Combine stdout and stderr for full output
+    full_output = stdout + stderr
+    print(f"Output of {script_name}:\n{full_output}\n{'=' * 50}")
 
-                # Decrease the position of the text (simulate falling)
-                if positions[i] > 0:
-                    print(chr(random.randint(33, 126)), end="")  # Random ASCII characters
-                    positions[i] -= 1
-                else:
-                    print(" ", end="")
-
-            print()  # Move to the next row
-            time.sleep(speed)
-    except KeyboardInterrupt:
-        print("\nMatrix effect terminated.")
-
-# Run the Matrix effect
-if __name__ == "__main__":
-    matrix_effect(columns=80, speed=0.05, density=0.2)
+    # Assert that the output does not contain the failure phrase
+    assert FAILURE_PHRASE not in full_output, f"Script {script_name} failed. Found '{FAILURE_PHRASE}' in output."
