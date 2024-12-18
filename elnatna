@@ -34,7 +34,7 @@ def runTestsFromJson(filePath = "input_data.json") {
         def command = "python ${test} ${comPort} ${address}"
         echo "Executing: ${command}"
 
-        def process = ["bash", "-c", command].execute()
+        def process = ["cmd.exe", "/c", command].execute()
         process.waitForOrKill(sleepTime * 1000)
 
         def stdout = process.in.text
