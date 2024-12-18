@@ -56,10 +56,10 @@ pipeline {
             steps {
                 script {
                     writeToJsonFile(
-                        comPort: "COM4",
-                        sleepTime: 5,
-                        address: "AA:BB:CC:DD:EE:FF",
-                        testList: ["test_script1.py", "test_script2.py"]
+                        comPort: params.COM_PORT ?: "COM4",
+                        sleepTime: params.SLEEP_TIME ?: 5,
+                        address: params.BLUETOOTH_ADDRESS ?: "AA:BB:CC:DD:EE:FF",
+                        testList: params.TEST_LIST ? params.TEST_LIST.tokenize(",") : ["test_script1.py", "test_script2.py"]
                     )
                 }
             }
