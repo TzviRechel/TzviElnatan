@@ -1,34 +1,35 @@
 import subprocess
 import pytest
 from threading import Timer
+import json
 import os
 
-# Default parameters
-TIME_FOR_TEST = 5  # Timeout for each script in seconds
-COM_PORT = "COM4"
-MAC_ADDRESS = "84:72:93:3c:5d:d6"
+# Path to the JSON configuration file
+CONFIG_FILE = "config.json"
 
-# Path to the directory containing attack scripts
-SCRIPTS_DIRECTORY = "../attack_scripts"
+# Load configuration from JSON
+def load_config(config_file):
+    with open(config_file, "r") as file:
+        return json.load(file)
+
+config = load_config(CONFIG_FILE)
+
+# Extract parameters from config
+TIME_FOR_TEST = config["TIME_FOR_TEST"]
+COM_PORT = config["COM_PORT"]
+MAC_ADDRESS = config["MAC_ADDRESS"]
+SCRIPTS = config["SCRIPTS"]
+PATH = config["attack path"]
 
 # The failure phrase to look for in the output
 FAILURE_PHRASE = "The device may have crashed"
 
-# Dynamically list all Python files in the specified directory
-def get_attack_scripts(directory):
-    return [
-        os.path.join(directory, f) for f in os.listdir(directory)
-        if f.endswith(".py")
-    ]
-
-attack_scripts = get_attack_scripts(SCRIPTS_DIRECTORY)
-
-@pytest.mark.parametrize("script_name", attack_scripts)
+@pytest.mark.parametrize("script_name", SCRIPTS)
 def test_attack_script(script_name):
     """
     Run an attack script, capture its output, and validate it.
     """
-    command = ["python", script_name, COM_PORT, MAC_ADDRESS]
+    command = ["python", attack path, script_name, COM_PORT, MAC_ADDRESS]
     print(f"Running script: {script_name}")
 
     try:
