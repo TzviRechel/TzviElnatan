@@ -1,1 +1,6 @@
-"second" 
+{
+	"COM": "COM4",
+	"SLEEP_TIME": 3,
+	"address": "",
+	"test_list": ["test1", "test2", "test3"]
+}
